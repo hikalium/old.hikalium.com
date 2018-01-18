@@ -2,6 +2,7 @@
 
 body {
 	background-color: #ffffff;
+	font-family: 'Source Code Pro', monospace;
 }
 
 div#sidebar {
@@ -34,5 +35,5 @@ blockquote {
 	font-family: 'Source Code Pro', monospace;
 	font-weight: lighter;
 	font-size: 24px;
-	margin: 8px 8px 8px 0px;
+	margin: 0px 8px 8px 0px;
 }

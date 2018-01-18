@@ -1,3 +1,7 @@
+out/
+conf/
+files/
+
 *.swp
 node_modules
 .DS_Store

@@ -4,7 +4,9 @@
   "description": "Simple and flexible contents management system",
   "main": "uniqnode.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"start": "node out/uniqnode.js",
+	"build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,7 @@
   "dependencies": {
     "@types/node": "^8.5.1",
     "ejs": "^2.5.7",
-    "file-type": "^7.4.0"
+    "file-type": "^7.4.0",
+    "marked": "^0.3.7"
   }
 }
