@@ -2,11 +2,10 @@
 
 body {
 	background-color: #ffffff;
-	font-family: 'Source Code Pro', monospace;
+	font-family: 'Source Code Pro',"Open Sans","Helvetica Neue",Helvetica,Arial,"ヒラギノ角ゴ ProN W3","Hiragino Kaku Gothic ProN","メイリオ",Meiryo,sans-serif;
 }
 
 div#sidebar {
-	//border-right: #e6e6e6 solid 1px;
 }
 
 h3 {
@@ -14,6 +13,8 @@ h3 {
 	border-bottom: #ff8800 solid 1px;
 	padding-left: 8px;
 	padding-bottom: 2px;
+	font-size: 18px;
+
 }
 
 h4 {
