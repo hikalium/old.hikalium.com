@@ -8,11 +8,17 @@ body {
 div#sidebar {
 }
 
+p {
+  margin-bottom: 2px;
+}
+
 h3 {
 	border-left: #ff8800 solid 2px;
 	border-bottom: #ff8800 solid 1px;
 	padding-left: 8px;
 	padding-bottom: 2px;
+	margin-top: 24px;
+	margin-bottom: 4px;
 	font-size: 18px;
 
 }
@@ -37,4 +43,8 @@ blockquote {
 	font-weight: lighter;
 	font-size: 24px;
 	margin: 0px 8px 8px 0px;
+}
+
+code {
+	padding: .1rem .5rem;
 }

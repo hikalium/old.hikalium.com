@@ -24,9 +24,12 @@
   },
   "homepage": "https://github.com/hikalium/uniqnode#readme",
   "dependencies": {
-    "@types/node": "^8.5.9",
-    "ejs": "^2.5.7",
-    "file-type": "^7.4.0",
-    "marked": "^0.3.12"
+    "@google-cloud/storage": "^1.7.0",
+    "@types/node": "^8.10.20",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "fast-crc32c": "^1.0.4",
+    "file-type": "^7.7.1",
+    "marked": "^0.3.19"
   }
 }

@@ -4,116 +4,80 @@ const fs = require('fs');
 const path = require('path');
 const fileType = require('file-type');
 const marked = require('marked');
+const express = require('express');
+const CloudStorage = require('@google-cloud/storage');
 
+const pathToViews = "views/";
+const pathToStaticFiles = "static/";
 const pathToPathTable = "./conf/pathTable.json";
+const projectId = 'hikalium-com';
 
-class UniqnodeServer
+const app = express();
+const storage = new CloudStorage({
+	projectId: projectId,
+});
+const bucket = storage.bucket('hikalium-com.appspot.com');
+
+app.set('views', pathToViews);
+app.set('view engine', 'ejs');
+
+app.use("/static", express.static(pathToStaticFiles));
+
+function generatePageFromCloudStorage(res, path: string)
 {
-	httpServer;
-	filePathConvertTable = {};
-	constructor(port: number){
-		this.httpServer = http.createServer();
-		this.httpServer.on("request", (req, res) => {
-			var reqPath = decodeURI(req.url).split("?")[0];
-			this.processRequest(reqPath, res);
-		});
-		this.httpServer.listen(port);
-		console.log("listening on port:" + port);
-	}
-	checkPrefix(prefix, candidate) {
-		// .resolve() removes trailing slashes
-		var absPrefix = path.resolve(prefix) + path.sep;
-		var absCandidate = path.resolve(candidate) + path.sep;
-		return absCandidate.substring(0, absPrefix.length) === absPrefix;
-	}
-	processRequest(reqPath, res){
-		var splitted = reqPath.split("/");
-		if(splitted[1] === "id"){
-			this.processIDRequest(res, splitted[2], splitted[3]);
+	console.log("CloudStorage: " + path);
+	bucket.getFiles({
+		prefix: path.substr(1),
+		//delimiter: path.endsWith('/') ? '/' : undefined,
+	}).then((results) => {
+		const files = results[0];
+		if(files.length === 0){
+			res.sendStatus(404);
+			return;
+		} else if(files.length === 1){
+			var file = bucket.file(files[0].name);
+			file.download({validation: false}).then((data) => {
+				var contents = data[0].toString();
+				var marked_html = marked(contents).split('src="imgs/').join('src="https://storage.googleapis.com/hikalium-com.appspot.com/imgs/');
+				res.render('page.ejs', {contentHtml: marked_html});
+			}, (err) => {
+				console.log("Error in file.download(): " + err);
+				res.sendStatus(500);
+			});
 		} else{
-			// check local files
-			this.processFileRequest(res, splitted.slice(1).join("/"));
+			var contents = `<h1>Index of ${path}</h1>\n\n`;
+			files.forEach(file => {
+				contents += `- [/page/${file.name}](/page/${file.name})\n`;
+			});
+			var marked_html = marked(contents).split('src="imgs/').join('src="https://storage.googleapis.com/hikalium-com.appspot.com/imgs/');
+			res.render('page.ejs', {contentHtml: marked_html});
 		}
-		res.end();
-	}
-	responseNotFound(res){
-		res.writeHead(404, {"Content-Type": "text/html; charset=utf-8"});
-		res.write(this.getHTMLWithContentHTML("<h2>Not found...</h2>"));
-	}
-	updateFilePathConvertTable(){
-		try{
-			this.filePathConvertTable = JSON.parse(fs.readFileSync(pathToPathTable, "utf-8"));
-		} catch(e){
-			console.log("failed to load pathTable");
-			return;
-		}
-	}
-	processFileRequest(res, path: string){
-		// check local files
-		this.updateFilePathConvertTable();
-		if(this.filePathConvertTable[path]){
-			this.processFileRequest(res, this.filePathConvertTable[path]);
-			return;
-		}
-		//
-		var path = "files/" + path;
-		console.log("[file] " + path);
-		//
-		if(!this.checkPrefix("files", path)){
-			// avoid dir traversal attack
-			console.log("prefix check failed.");
-			this.responseNotFound(res);
-			return;
-		}
-		try{
-			var contents = fs.readFileSync(path);
-		} catch(e){
-			try{
-				path += ".md";
-				var contents = fs.readFileSync(path);
-			} catch(e){
-				console.log("file not found");
-				this.responseNotFound(res);
-				return;
-			}
-		}
-		var ftype = fileType(contents);
-		if(!ftype){
-			if(path.endsWith(".css")){
-				ftype = {mime: "text/css"};
-			} else if(path.endsWith(".js")){
-				ftype = {mime: "text/javascript"};
-			} else if(path.endsWith(".md")){
-				ftype = {mime: "text/html"};
-				contents = this.getHTMLWithContentHTML(marked(contents + "</pre>"));
-			} else{
-				console.log("mime type not found");
-				this.responseNotFound(res);
-				return;
-			}
-		}
-		res.writeHead(200, {"Content-Type": ftype.mime});
-		res.write(contents);
-	}
-	getHTMLWithContentHTML(contentHTML)
-	{
-		var template = fs.readFileSync("templates/view.ejs", "utf8");
-		var contents = "failed";
-		if(template){
-			contents = ejs.render(template, {contents: contentHTML});
-		}
-		return contents;
-	}
-	processIDRequest(res, id, action = "view"){
-		var contents = this.getHTMLWithContentHTML(`
-			<ul>
-				<li>${action}</li>
-				<li>${id}</li>
-			</ul>
-		`);
-		res.writeHead(201, {"Content-Type": "text/html; charset=utf-8"});
-		res.write(contents);
-	}
+	});
 }
 
-var uniqnode = new UniqnodeServer(8080);
+// https://cloud.google.com/nodejs/docs/reference/storage/1.7.x/File#get
+app.get('/', (req, res) => {
+	generatePageFromCloudStorage(res, "/index.md");
+});
+app.get('/index', (req, res) => {
+	generatePageFromCloudStorage(res, "/");
+});
+app.get('/profile', (req, res) => {
+	generatePageFromCloudStorage(res, "/about.md");
+});
+app.get('/products', (req, res) => {
+	generatePageFromCloudStorage(res, "/products.md");
+});
+app.use('/page/', function(req, res){
+	generatePageFromCloudStorage(res, req.path);
+});
+app.use(function(req, res){
+	res.sendStatus(404);
+});
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+	console.log(`App listening on port ${PORT}`);
+	console.log('Press Ctrl+C to quit.');
+});
+
